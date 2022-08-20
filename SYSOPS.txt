@@ -1,0 +1,113 @@
+SYSOPS
+How to determine which services need to be restarted
+Post author
+By milosz
+Post date
+December 7, 2020
+Use needrestart utility to determine which services need to be restarted after the upgrade.
+
+
+Install needrestart utility.
+
+$ sudo apt install needrestart
+Display a summary of the command-line usage.
+
+$ sudo needrestart --help
+needrestart 3.4 - Restart daemons after library updates.
+Authors:
+  Thomas Liske <thomas@fiasko-nw.net>
+Copyright Holder:
+  2013 - 2018 (C) Thomas Liske [http://fiasko-nw.net/~thomas/]
+Upstream:
+  https://github.com/liske/needrestart
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+Usage:
+  needrestart [-vn] [-c <cfg>] [-r <mode>] [-f <fe>] [-u <ui>] [-bkl]
+    -v		be more verbose
+    -q		be quiet
+    -m <mode>	set detail level
+	e	(e)asy mode
+	a	(a)dvanced mode
+    -n		set default answer to 'no'
+    -c <cfg>	config filename
+    -r <mode>	set restart mode
+	l	(l)ist only
+	i	(i)nteractive restart
+	a	(a)utomatically restart
+    -b		enable batch mode
+    -p          enable nagios plugin mode
+    -f <fe>	overwrite debconf frontend (DEBIAN_FRONTEND, debconf(7))
+    -u <ui>     use preferred UI package (-u ? shows available packages)
+  By using the following options only the specified checks are performed:
+    -k          check for obsolete kernel
+    -l          check for obsolete libraries
+    -w          check for obsolete CPU microcode
+    --help      show this help
+    --version   show version information
+Inspect what needs to be restarted using machine-friendly output.
+
+$ sudo needrestart -b
+NEEDRESTART-VER: 3.4
+NEEDRESTART-KCUR: 4.19.0-8-amd64
+NEEDRESTART-KEXP: 4.19.0-9-amd64
+NEEDRESTART-KSTA: 3
+NEEDRESTART-SVC: exim4.service
+NEEDRESTART-SVC: postgresql@11-main.service
+There is a difference between the current and expected kernel with a status indicating pending version upgrade. Possible statuses are: unknown (0), no pending upgrade (1), ABI compatible upgrade pending (2), version upgrade pending (3).
+Inspect what needs to be restarted using human-friendly output (requires user interaction).
+
+$ sudo needrestart -u NeedRestart::UI::stdio -r l
+Scanning processes...
+Scanning candidates...
+Scanning linux images...
+Pending kernel upgrade!
+Running kernel version:
+  4.19.0-8-amd64
+Diagnostics:
+  The currently running kernel version is not the expected kernel version 4.19.0-9-amd64.
+Restarting the system to load the new kernel will not be handled automatically, so you should consider rebooting. [Return]
+Services to be restarted:
+ systemctl restart exim4.service
+ systemctl restart postgresql@11-main.service
+No containers need to be restarted.
+No user sessions are running outdated binaries.
+Restart services.
+
+$ sudo needrestart -u NeedRestart::UI::stdio -r a
+Scanning processes...
+Scanning candidates...
+Scanning linux images...
+Pending kernel upgrade!
+Running kernel version:
+  4.19.0-8-amd64
+Diagnostics:
+  The currently running kernel version is not the expected kernel version 4.19.0-9-amd64.
+Restarting the system to load the new kernel will not be handled automatically, so you should consider rebooting. [Return]
+Restarting services...
+ systemctl restart exim4.service postgresql@11-main.service
+No containers need to be restarted.
+No user sessions are running outdated binaries.
+Again, inspect what needs to be restarted.
+
+$ sudo needrestart -b
+NEEDRESTART-VER: 3.4
+NEEDRESTART-KCUR: 4.19.0-8-amd64
+NEEDRESTART-KEXP: 4.19.0-9-amd64
+NEEDRESTART-KSTA: 3
+Reboot the operating system and inspect what needs to be restarted.
+
+$ sudo needrestart -b
+NEEDRESTART-VER: 3.4
+NEEDRESTART-KCUR: 4.19.0-9-amd64
+NEEDRESTART-KEXP: 4.19.0-9-amd64
+NEEDRESTART-KSTA: 1
+$ sudo needrestart -u NeedRestart::UI::stdio -r l
+Scanning processes...
+Scanning linux images...
+Running kernel seems to be up-to-date.
+No services need to be restarted.
+No containers need to be restarted.
+No user sessions are running outdated binaries.
